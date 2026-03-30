@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 setlocal EnableExtensions EnableDelayedExpansion
-set "FFMPEG_PATH=C:\ffmpeg_backup\bin"
+set "FFMPEG_PATH=C:\ffmpeg\bin"
 if not exist "%FFMPEG_PATH%\ffmpeg.exe" (
     cls
     echo ERROR: ffmpeg.exe not found in:
@@ -97,7 +97,7 @@ if errorlevel 1 (
 )
 cls
 echo [1] Youtube Audiospur 
-echo [2] Bitrate Konvertung
+echo [2] Bitrate Konvertierung
 choice /n /c "12"
 if errorlevel 2 (
 cls
@@ -117,7 +117,7 @@ if errorlevel 1 set bitrate=128 & goto :B
 
 if errorlevel 1 (
 cls
-yt-dlp --playlist-items 1 -F "%cleanurl%"
+yt-dlp --playlist-items 1 -F %cookieparam% "%cleanurl%"
 echo Enter a format number for audio only
 <nul set /p=   >nul 2>&1
 set /p format=
@@ -167,7 +167,7 @@ set /p url=
 for /f "tokens=1 delims=&" %%A in ("%url%") do set "cleanurl=%%A"
 :DA
 cls
-yt-dlp --playlist-items 1 -F "%cleanurl%"
+yt-dlp --playlist-items 1 -F %cookieparam% "%cleanurl%"
 echo Enter a format or Video+Audio
 <nul set /p=   >nul 2>&1
 set /p format=
@@ -179,7 +179,7 @@ if "!format!"=="" (
 	pause >nul
     goto :DA
 )
-yt-dlp --ffmpeg-location "%FFMPEG_PATH%" %cookieparam% -f "!format!" --merge-output-format mp4 -o "%%USERPROFILE%%\Downloads\%%(playlist_title)s\%%(playlist_index)02d - %%(title)s.%%(ext)s" -N 4 %cleanurl%
+yt-dlp --ffmpeg-location "%FFMPEG_PATH%" %cookieparam% -f "!format!" --merge-output-format mp4 -o "%%USERPROFILE%%\Downloads\%%(playlist_title)s\%%(playlist_index)02d - %%(upload_date>%%Y-%%m-%%d)s - %%(title)s.%%(ext)s" -N 4 %cleanurl%
 if errorlevel 1 (
     echo.
     echo Error: Press to go back
@@ -222,8 +222,12 @@ if errorlevel 1 (
     pause >nul
     goto :E
 )
-
 :F
+cls
+echo [1] Youtube Audiospur 
+echo [2] Bitrate Konvertierung
+choice /n /c "12"
+if errorlevel 2 (
 cls
 echo Enter the target MP3 bitrate in kbit/s:
 echo [1] 128 kbit/s
@@ -236,11 +240,33 @@ if errorlevel 4 set bitrate=320 & goto :G
 if errorlevel 3 set bitrate=256 & goto :G
 if errorlevel 2 set bitrate=192 & goto :G
 if errorlevel 1 set bitrate=128 & goto :G
+)
+
+if errorlevel 1 (
+cls
+yt-dlp -F %cookieparam% "%cleanurl%"
+echo Enter a format number for audio only
+<nul set /p=   >nul 2>&1
+set /p format=
+
+if "!format!"=="" (
+	echo.
+	echo ERROR: No format specified.
+	echo press to go back
+	pause >nul
+    goto :F
+)
+yt-dlp --ffmpeg-location "%FFMPEG_PATH%" %cookieparam% -f "!format!" -o "%%USERPROFILE%%\Downloads\%%(playlist_title)s\%%(title)s.%%(ext)s" -N 4 %cleanurl%
+goto :GA
+)
+
+)
 
 :G
 cls
 yt-dlp --ffmpeg-location "%FFMPEG_PATH%" %cookieparam% -x --audio-format mp3 --audio-quality %bitrate% -o "%%USERPROFILE%%\Downloads\%%(title)s.%%(ext)s" -N 4 %cleanurl%
 
+:GA
 echo.
 echo Download complete!
 echo press to go to menu
@@ -259,7 +285,7 @@ echo use Youtube cookies? ^(Y/N/B^)
 choice /n /c YNB
 if errorlevel 3 goto :menu
 if errorlevel 2 set "cookieparam=" & goto :H
-if errorlevel 1 set "cookieparam=--cookies helena_cookies.txt" & goto :H
+if errorlevel 1 set "cookieparam=--cookies cookies.txt" & goto :H
 
 :H
 cls
@@ -269,7 +295,7 @@ set /p url=
 for /f "tokens=1 delims=&" %%A in ("%url%") do set "cleanurl=%%A"
 :I
 cls
-yt-dlp -F "%cleanurl%"
+yt-dlp -F %cookieparam% "%cleanurl%"
 if errorlevel 1 (
 	echo Press to go back
     pause >nul
@@ -282,7 +308,7 @@ echo Enter a format number or Video+Audio
 set /p format=
 
 :J
-yt-dlp --ffmpeg-location "%FFMPEG_PATH%" %cookieparam% -f "%format%" --merge-output-format mp4 -o "%%USERPROFILE%%\Downloads\%%(title)s.%%(ext)s" -N 4 %cleanurl%
+yt-dlp --ffmpeg-location "%FFMPEG_PATH%" %cookieparam% -f "%format%" --merge-output-format mp4 -o "%USERPROFILE%\Downloads\%%(upload_date>%%Y-%%m-%%d)s - %%(title)s.%%(ext)s" -N 4 %cleanurl%
 if errorlevel 1 (
     echo.
     echo Error: Press to go back
